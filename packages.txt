@@ -1,0 +1,4 @@
+nodejs
+npm
+curl
+python3-pip
