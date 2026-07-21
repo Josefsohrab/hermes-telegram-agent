@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: hermes-telegram-agent
+    runtime: docker
+    repo: https://github.com/Josefsohrab/hermes-telegram-agent
+    branch: main
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /v1/models
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_USER_ID
+        sync: false
