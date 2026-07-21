@@ -1,65 +1,79 @@
 # Hermes Agent + 9Router on Koyeb 🚀
 
+[![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=git&repository=github.com/Josefsohrab/hermes-telegram-agent&branch=main&name=hermes-telegram-agent&ports=8080;http;/)
+
 راه‌اندازی **ربات تلگرام Hermes Agent** با استفاده از **9Router** روی پلتفرم ابری **Koyeb** به صورت کاملاً رایگان و ۲۴ ساعته.
+
+## ⚡ دیپلوی با یک کلیک
+
+روی دکمه بالا کلیک کنید ← دو متغیر زیر را وارد کنید ← تمام!
 
 ## 📋 پیش‌نیازها
 
-قبل از شروع، موارد زیر را آماده کنید:
+قبل از دیپلوی، این دو مقدار را آماده کنید:
 
-1. **توکن ربات تلگرام** — از [BotFather](https://t.me/BotFather) دریافت کنید
-2. **آی‌دی عددی تلگرام** — از [userinfobot](https://t.me/userinfobot) دریافت کنید
-3. **اکانت Koyeb** — در [koyeb.com](https://www.koyeb.com) با گیت‌هاب ثبت‌نام کنید
+| نیاز | از کجا بگیرم | مثال |
+|------|-------------|------|
+| **توکن ربات تلگرام** | [@BotFather](https://t.me/BotFather) ← `/newbot` | `123456:ABCdef...` |
+| **آی‌دی عددی تلگرام** | [@userinfobot](https://t.me/userinfobot) ← `/start` | `987654321` |
 
-## 🚀 راه‌اندازی روی Koyeb
+## 🚀 روش دوم: دیپلوی دستی
 
-### گام ۱: اتصال ریپازیتوری
+### گام ۱: Fork کنید
 
-1. وارد پنل [Koyeb](https://app.koyeb.com) شوید
+این ریپازیتوری را Fork کنید یا از طریق پنل Koyeb مستقیماً به آن متصل شوید.
+
+### گام ۲: سرویس جدید در Koyeb
+
+1. وارد [Koyeb](https://app.koyeb.com) شوید
 2. روی **Create Service** کلیک کنید
-3. گزینه **GitHub** را انتخاب کنید
-4. این ریپازیتوری را انتخاب کنید
+3. گزینه **GitHub** ← این ریپازیتوری را انتخاب کنید
+4. فایل `koyeb.yaml` به طور خودکار تنظیمات را اعمال می‌کند
 
-### گام ۲: تنظیم متغیرهای محیطی
+### گام ۳: متغیرهای مخفی (Secrets)
 
-دو متغیر محیطی (Secret) تعریف کنید:
+| متغیر | توضیح |
+|-------|-------|
+| `TELEGRAM_BOT_TOKEN` | توکن دریافتی از BotFather |
+| `TELEGRAM_USER_ID` | آی‌دی عددی شما از userinfobot |
 
-| متغیر | توضیح | مثال |
-|-------|-------|------|
-| `TELEGRAM_BOT_TOKEN` | توکن ربات تلگرام | `123456:ABCdef...` |
-| `TELEGRAM_USER_ID` | آی‌دی عددی شما | `987654321` |
+### گام ۴: دیپلوی 🎯
 
-### گام ۳: تنظیم پورت
-
-- پورت کانتینر را روی `8080` تنظیم کنید
-
-### گام ۴: انتخاب سایز رایگان
-
-- Instance type را روی **Free (Nano)** قرار دهید
-
-### گام ۵: دیپلوی 🎯
-
-روی دکمه **Deploy** کلیک کنید و منتظر بمانید تا سرویس آماده شود!
+روی **Deploy** کلیک کنید. سرویس پس از ۲-۳ دقیقه آماده می‌شود!
 
 ## 🛠 ساختار پروژه
 
 | فایل | توضیح |
 |------|-------|
-| `Dockerfile` | کانتینر Node 22 Alpine + Python + 9Router + Hermes |
-| `entrypoint.sh` | اسکریپت راه‌اندازی با health check خودکار |
+| `Dockerfile` | Node 22 Alpine + Python + 9Router + Hermes |
+| `entrypoint.sh` | راه‌اندازی با health check هوشمند |
+| `koyeb.yaml` | پیکربندی خودکار سرویس Koyeb |
 
-## ✨ ویژگی‌های بهبود یافته
+## ✨ ویژگی‌ها
 
-- ✅ استفاده از **Alpine Linux** برای حجم کمتر و سرعت بالاتر
-- ✅ **Health check خودکار** 9Router به جای `sleep` ثابت
-- ✅ متغیر `LISTEN_HOST` به جای `HOSTNAME` برای جلوگیری از تداخل
-- ✅ قابلیت اجرای ۲۴ ساعته روی پلن رایگان Koyeb
+- ✅ **Alpine Linux** — حجم کم، سرعت بالا
+- ✅ **Health check خودکار** 9Router با ۳۰ تلاش
+- ✅ **متغیر `LISTEN_HOST`** به جای `HOSTNAME` برای جلوگیری از تداخل
+- ✅ **اجرای ۲۴/۷** روی پلن رایگان Koyeb (بدون خواب!)
+- ✅ **پیکربندی خودکار** با فایل `koyeb.yaml`
 
 ## ⚠️ نکات مهم
 
-- پلن رایگان Koyeb شامل ۵۱۲MB رم و ۱ vCPU است
-- در صورت نیاز به منابع بیشتر، سایز instance را ارتقا دهید
-- لاگ‌ها را از پنل Koyeb برای عیب‌یابی بررسی کنید
+- پلن رایگان Koyeb: **۵۱۲MB رم** و **۱ vCPU**
+- منطقه پیش‌فرض: **Paris (par)** — برای تأخیر کمتر می‌توانید تغییر دهید
+- لاگ‌ها را از پنل Koyeb بررسی کنید
+- در صورت نیاز به منابع بیشتر، instance را به `micro` یا `small` ارتقا دهید
+
+## 📊 وضعیت سرویس
+
+پس از دیپلوی موفق، نشانگر وضعیت در پنل Koyeb باید **Healthy** باشد:
+
+```
+✓ Build completed
+✓ Deployment successful  
+✓ Health check: Healthy
+```
 
 ---
 
-ساخته شده با ❤️ برای اجرای آسان Hermes Agent
+⚡ ساخته شده برای اجرای آسان — فقط با یک کلیک!
