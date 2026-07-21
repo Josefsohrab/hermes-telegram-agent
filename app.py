@@ -1,31 +1,35 @@
 #!/usr/bin/env python3
-"""Hermes Agent + 9Router — Hugging Face Space Edition"""
+"""Hermes Agent + 9Router — Hugging Face Space (Gradio Edition)"""
 
-import subprocess, os, sys, time
+import subprocess, os, sys, time, threading
 
 ROUTER_PORT = 9000
-LISTEN_PORT = int(os.environ.get("PORT", "7860")) 
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_USER_ID = os.environ.get("TELEGRAM_USER_ID", "")
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "not-set")
+TELEGRAM_USER_ID = os.environ.get("TELEGRAM_USER_ID", "0")
 
-def run(cmd, shell=False):
-    print(f"▶ {cmd if isinstance(cmd, str) else ' '.join(cmd)}")
-    subprocess.run(cmd, shell=shell, check=True)
+def install_and_start_services():
+    """Install 9Router + Hermes, then start both in background."""
+    try:
+        # 1. Install 9Router
+        print("[1/5] Installing 9Router...", flush=True)
+        subprocess.run(["npm", "install", "-g", "9router"], check=True,
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print("[1/5] Done.")
 
-# ── 1. Install 9Router ──
-print("📦 Installing 9Router...")
-run(["npm", "install", "-g", "9router"])
+        # 2. Install Hermes
+        print("[2/5] Installing Hermes Agent...", flush=True)
+        subprocess.run(
+            "curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash",
+            shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print("[2/5] Done.")
 
-# ── 2. Install Hermes ──
-print("📦 Installing Hermes Agent...")
-run("curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash", shell=True)
+        # 3. Generate Hermes config
+        print("[3/5] Generating config...", flush=True)
+        hermes_dir = os.path.expanduser("~/.hermes")
+        os.makedirs(hermes_dir, exist_ok=True)
 
-# ── 3. Generate config ──
-print("⚙ Generating Hermes config...")
-hermes_dir = os.path.expanduser("~/.hermes")
-os.makedirs(hermes_dir, exist_ok=True)
-
-config = f"""model:
+        with open(os.path.join(hermes_dir, "config.yaml"), "w") as f:
+            f.write(f"""model:
   default: "kr/claude-sonnet-4.5"
   provider: "custom"
   base_url: "http://127.0.0.1:{ROUTER_PORT}/v1"
@@ -35,53 +39,71 @@ platforms:
     enabled: true
     token: "{TELEGRAM_BOT_TOKEN}"
     allowed_users: [{TELEGRAM_USER_ID}]
-"""
-with open(os.path.join(hermes_dir, "config.yaml"), "w") as f:
-    f.write(config)
+""")
+        with open(os.path.join(hermes_dir, ".env"), "w") as f:
+            f.write(f"OPENAI_API_KEY=9router\nTELEGRAM_BOT_TOKEN={TELEGRAM_BOT_TOKEN}\nTELEGRAM_ALLOWED_USERS={TELEGRAM_USER_ID}\n")
+        print("[3/5] Done.")
 
-env_content = f"""OPENAI_API_KEY=9router
-TELEGRAM_BOT_TOKEN={TELEGRAM_BOT_TOKEN}
-TELEGRAM_ALLOWED_USERS={TELEGRAM_USER_ID}
-"""
-with open(os.path.join(hermes_dir, ".env"), "w") as f:
-    f.write(env_content)
+        # 4. Start 9Router
+        print(f"[4/5] Starting 9Router on port {ROUTER_PORT}...", flush=True)
+        subprocess.Popen(["9router", "--port", str(ROUTER_PORT), "--host", "0.0.0.0"],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        import urllib.request
+        for i in range(30):
+            try:
+                urllib.request.urlopen(f"http://127.0.0.1:{ROUTER_PORT}/v1/models", timeout=2)
+                print(f"[4/5] 9Router ready! (attempt {i+1})")
+                break
+            except Exception:
+                time.sleep(2)
 
-# ── 4. Start 9Router ──
-print(f"🚀 Starting 9Router on port {ROUTER_PORT}...")
-subprocess.Popen(["9router", "--port", str(ROUTER_PORT), "--host", "0.0.0.0"],
-                 stdout=sys.stdout, stderr=sys.stderr)
+        # 5. Start Hermes Gateway
+        print("[5/5] Starting Hermes Telegram Gateway...", flush=True)
+        env = os.environ.copy()
+        env["OPENAI_API_KEY"] = "9router"
+        subprocess.Popen(["hermes", "gateway"], env=env,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print("[5/5] Done! Bot is starting...", flush=True)
+        return True
+    except Exception as e:
+        print(f"ERROR: {e}", flush=True)
+        return False
 
-import urllib.request
-for i in range(30):
-    try:
-        urllib.request.urlopen(f"http://127.0.0.1:{ROUTER_PORT}/v1/models", timeout=2)
-        print(f"✅ 9Router ready! (attempt {i+1})")
-        break
-    except Exception:
-        print(f"⏳ Waiting... ({i+1}/30)")
-        time.sleep(2)
+# Start services in background thread
+service_thread = threading.Thread(target=install_and_start_services, daemon=True)
+service_thread.start()
 
-# ── 5. Start Hermes ──
-print("🚀 Starting Hermes Telegram Gateway...")
-env = os.environ.copy()
-env["OPENAI_API_KEY"] = "9router"
-subprocess.Popen(["hermes", "gateway"], env=env, stdout=sys.stdout, stderr=sys.stderr)
+# ── Gradio UI ──
+import gradio as gr
 
-# ── 6. Simple health server on HF port ──
-from http.server import HTTPServer, BaseHTTPRequestHandler
+with gr.Blocks(title="Hermes Agent", theme=gr.themes.Soft(primary_hue="blue")) as demo:
+    gr.Markdown("""
+    # 🤖 Hermes Agent — ربات تلگرام هوشمند
+    
+    > ربات تلگرام شما در حال راه‌اندازی در پس‌زمینه این Space است.
+    > لطفاً ۲ تا ۳ دقیقه صبر کنید تا نصب و راه‌اندازی کامل شود.
+    
+    ---
+    
+    ## ✅ وضعیت
+    """)
+    
+    with gr.Row():
+        gr.Markdown("🟢 **9Router** — سرویس API هوش مصنوعی")
+        gr.Markdown("🟢 **Hermes Gateway** — اتصال به تلگرام")
+    
+    gr.Markdown("""
+    ---
+    
+    ## 📱 نحوه استفاده
+    
+    ۱. در تلگرام، ربات خود را جستجو کنید
+    ۲. دکمه **START** را بزنید یا `/start` بفرستید
+    ۳. ربات با **Claude Sonnet 4.5** به شما پاسخ می‌دهد!
+    
+    ---
+    
+    ⚠️ **نکته:** این Space هر چند ساعت یکبار restart می‌شود (طبیعی است). ربات پس از restart دوباره فعال می‌شود.
+    """)
 
-HTML = """<!DOCTYPE html><html dir=rtl lang=fa>
-<head><meta charset=UTF-8><title>Hermes Agent</title>
-<style>body{font-family:system-ui;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#0f172a;color:#e2e8f0}.card{text-align:center;padding:3rem;background:#1e293b;border-radius:1rem;box-shadow:0 4px 24px rgba(0,0,0,.3)}.dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#22c55e;margin-left:8px;animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}h1{font-size:2rem;margin-bottom:.5rem}p{color:#94a3b8}code{background:#334155;padding:2px 8px;border-radius:4px}</style>
-</head><body><div class=card><h1>🤖 Hermes Agent <span class=dot></span></h1><p>ربات تلگرام در حال اجراست ✅</p><p>به تلگرام بروید و <code>/start</code> را بفرستید</p></div></body></html>"""
-
-class H(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/html; charset=utf-8")
-        self.end_headers()
-        self.wfile.write(HTML.encode())
-    def log_message(self, *a): pass
-
-print(f"🌐 Health page on port {LISTEN_PORT}")
-HTTPServer(("0.0.0.0", LISTEN_PORT), H).serve_forever()
+demo.launch(server_name="0.0.0.0", server_port=7860)
