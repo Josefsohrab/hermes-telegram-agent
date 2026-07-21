@@ -1,77 +1,101 @@
-# Hermes Agent + 9Router on Koyeb 🚀
+# Hermes Agent + 9Router on Render 🚀
 
-[![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=git&repository=github.com/Josefsohrab/hermes-telegram-agent&branch=main&name=hermes-telegram-agent&ports=8080;http;/)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Josefsohrab/hermes-telegram-agent)
 
-راه‌اندازی **ربات تلگرام Hermes Agent** با استفاده از **9Router** روی پلتفرم ابری **Koyeb** به صورت کاملاً رایگان و ۲۴ ساعته.
+راه‌اندازی **ربات تلگرام Hermes Agent** با استفاده از **9Router** روی پلتفرم ابری **Render** — کاملاً رایگان.
 
 ## ⚡ دیپلوی با یک کلیک
 
-روی دکمه بالا کلیک کنید ← دو متغیر زیر را وارد کنید ← تمام!
+روی دکمه بالا کلیک کنید ← دو متغیر را وارد کنید ← تمام!
 
-## 📋 پیش‌نیازها
+## 📋 پیش‌نیازها (۲ دقیقه)
 
-قبل از دیپلوی، این دو مقدار را آماده کنید:
+قبل از دیپلوی، این دو مقدار را از تلگرام دریافت کنید:
 
 | نیاز | از کجا بگیرم | مثال |
 |------|-------------|------|
 | **توکن ربات تلگرام** | [@BotFather](https://t.me/BotFather) ← `/newbot` | `123456:ABCdef...` |
 | **آی‌دی عددی تلگرام** | [@userinfobot](https://t.me/userinfobot) ← `/start` | `987654321` |
 
+## 🚀 روش اول: دیپلوی با یک کلیک (ساده‌ترین)
+
+1. روی دکمه **Deploy to Render** در بالای صفحه کلیک کنید
+2. در صفحه باز شده، نام سرویس را به دلخواه تنظیم کنید (پیش‌فرض: `hermes-telegram-agent`)
+3. در بخش **Environment Variables**، این دو متغیر را اضافه کنید:
+
+   | Key | Value |
+   |-----|-------|
+   | `TELEGRAM_BOT_TOKEN` | توکن دریافتی از BotFather |
+   | `TELEGRAM_USER_ID` | آی‌دی عددی شما از userinfobot |
+
+4. روی **Apply** کلیک کنید — حدود ۵ دقیقه صبر کنید تا بیلد تمام شود.
+
 ## 🚀 روش دوم: دیپلوی دستی
 
-### گام ۱: Fork کنید
+1. وارد [dashboard.render.com](https://dashboard.render.com) شوید
+2. **New Web Service** ← GitHub ← این ریپازیتوری را انتخاب کنید
+3. همه تنظیمات از فایل `render.yaml` خوانده می‌شود
+4. متغیرهای `TELEGRAM_BOT_TOKEN` و `TELEGRAM_USER_ID` را اضافه کنید
+5. روی **Create Web Service** کلیک کنید
 
-این ریپازیتوری را Fork کنید یا از طریق پنل Koyeb مستقیماً به آن متصل شوید.
+## ⏰ مشکل خواب ۱۵ دقیقه‌ای — راه حل
 
-### گام ۲: سرویس جدید در Koyeb
+⚠️ Render در پلن رایگان، سرویس را بعد از ۱۵ دقیقه بی‌کار ماندن می‌خواباند.
 
-1. وارد [Koyeb](https://app.koyeb.com) شوید
-2. روی **Create Service** کلیک کنید
-3. گزینه **GitHub** ← این ریپازیتوری را انتخاب کنید
-4. فایل `koyeb.yaml` به طور خودکار تنظیمات را اعمال می‌کند
+✅ **راه حل:** دو گزینه دارید:
 
-### گام ۳: متغیرهای مخفی (Secrets)
+### گزینه A: UptimeRobot (کاملاً رایگان — توصیه می‌شود)
 
-| متغیر | توضیح |
-|-------|-------|
-| `TELEGRAM_BOT_TOKEN` | توکن دریافتی از BotFather |
-| `TELEGRAM_USER_ID` | آی‌دی عددی شما از userinfobot |
+1. به [uptimerobot.com](https://uptimerobot.com) بروید و ثبت‌نام کنید
+2. **Add New Monitor** ← نوع **HTTP(s)** را انتخاب کنید
+3. Friendly Name: `Hermes Agent`
+4. URL: آدرس سرویس Render خود را وارد کنید (مثلاً `https://hermes-telegram-agent.onrender.com/v1/models`)
+5. Monitoring Interval: **Every 5 minutes**
+6. روی **Create Monitor** کلیک کنید
 
-### گام ۴: دیپلوی 🎯
+به همین سادگی! UptimeRobot هر ۵ دقیقه سرویس شما را پینگ می‌کند و هرگز نمی‌خوابد.
 
-روی **Deploy** کلیک کنید. سرویس پس از ۲-۳ دقیقه آماده می‌شود!
+### گزینه B: Cron-job.org (جایگزین)
+
+1. به [cron-job.org](https://cron-job.org) بروید
+2. یک Cronjob با تنظیمات:
+   - URL: `https://hermes-telegram-agent.onrender.com/v1/models`
+   - Interval: **Every 5 minutes**
+3. ذخیره کنید.
 
 ## 🛠 ساختار پروژه
 
 | فایل | توضیح |
 |------|-------|
 | `Dockerfile` | Node 22 Alpine + Python + 9Router + Hermes |
-| `entrypoint.sh` | راه‌اندازی با health check هوشمند |
-| `koyeb.yaml` | پیکربندی خودکار سرویس Koyeb |
+| `entrypoint.sh` | راه‌اندازی با `PORT` داینامیک و health check هوشمند |
+| `render.yaml` | پیکربندی خودکار سرویس Render |
 
-## ✨ ویژگی‌ها
+## ✨ ویژگی‌های بهینه‌شده برای Render
 
-- ✅ **Alpine Linux** — حجم کم، سرعت بالا
-- ✅ **Health check خودکار** 9Router با ۳۰ تلاش
-- ✅ **متغیر `LISTEN_HOST`** به جای `HOSTNAME` برای جلوگیری از تداخل
-- ✅ **اجرای ۲۴/۷** روی پلن رایگان Koyeb (بدون خواب!)
-- ✅ **پیکربندی خودکار** با فایل `koyeb.yaml`
+- ✅ **پورت داینامیک** — `${PORT:-8080}` سازگار با Render
+- ✅ **Alpine Linux** — حجم و رم کمتر، سرعت بالاتر
+- ✅ **Health check خودکار** — ۳۰ تلاش تا آماده شدن 9Router
+- ✅ **پلن رایگان دائمی** — ۵۱۲MB رم + ۰.۱ CPU
+- ✅ **فعال‌سازی مجدد خودکار** — با ورود پیام تلگرام، سرویس در ۳۰-۶۰ ثانیه بیدار می‌شود
 
 ## ⚠️ نکات مهم
 
-- پلن رایگان Koyeb: **۵۱۲MB رم** و **۱ vCPU**
-- منطقه پیش‌فرض: **Paris (par)** — برای تأخیر کمتر می‌توانید تغییر دهید
-- لاگ‌ها را از پنل Koyeb بررسی کنید
-- در صورت نیاز به منابع بیشتر، instance را به `micro` یا `small` ارتقا دهید
+| نکته | توضیح |
+|------|-------|
+| **زمان بیدار شدن** | ۳۰-۶۰ ثانیه بعد از دریافت پیام — صبور باشید |
+| **اولین پیام** | بعد از `/start` ممکن است ۱ دقیقه طول بکشد تا پاسخ بیاید |
+| **محدودیت ماهانه** | ۷۵۰ ساعت رایگان (معادل تمام ماه) |
+| **UptimeRobot** | حتماً تنظیم کنید تا سرویس نخوابد |
 
 ## 📊 وضعیت سرویس
 
-پس از دیپلوی موفق، نشانگر وضعیت در پنل Koyeb باید **Healthy** باشد:
+پس از دیپلوی موفق، در پنل Render باید ببینید:
 
 ```
-✓ Build completed
-✓ Deployment successful  
-✓ Health check: Healthy
+✓ Build successful
+✓ Deploying...
+✓ Your service is live 🟢
 ```
 
 ---
