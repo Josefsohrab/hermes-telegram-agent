@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Use Render's PORT or default to 8080
+PORT="${PORT:-8080}"
+
 # Create Hermes config directory
 mkdir -p /root/.hermes
 
@@ -9,7 +12,7 @@ cat <<EOF > /root/.hermes/config.yaml
 model:
   default: "kr/claude-sonnet-4.5"
   provider: "custom"
-  base_url: "http://127.0.0.1:8080/v1"
+  base_url: "http://127.0.0.1:${PORT}/v1"
 
 platforms:
   telegram:
@@ -25,15 +28,15 @@ TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
 TELEGRAM_ALLOWED_USERS=${TELEGRAM_USER_ID}
 EOF
 
-# Start 9Router on port 8080
-echo "Starting 9Router on port 8080..."
-9router --port 8080 --host 0.0.0.0 &
+# Start 9Router
+echo "Starting 9Router on port ${PORT}..."
+9router --port "${PORT}" --host 0.0.0.0 &
 
 # Wait for 9Router to be ready
 echo "Waiting for 9Router to start..."
 for i in $(seq 1 30); do
-    if curl -s http://127.0.0.1:8080/v1/models > /dev/null 2>&1; then
-        echo "9Router is ready!"
+    if curl -s "http://127.0.0.1:${PORT}/v1/models" > /dev/null 2>&1; then
+        echo "9Router is ready! (port ${PORT})"
         break
     fi
     if [ $i -eq 30 ]; then
